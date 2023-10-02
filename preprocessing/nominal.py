@@ -1,9 +1,6 @@
 class NominalEncoder:
-    def __init__(self, elements, create_table_method=None):
-        if create_table_method == None:
-            self.table = create_onehot_table(elements)
-        else:
-            self.table = create_table_method(elements)
+    def __init__(self, table):
+        self.table = table
 
     def encode(self, elements):
         results = [self.table[element] for element in elements]
@@ -34,6 +31,7 @@ def create_prob_table(elements) -> dict:
 if __name__=="__main__":
     elements = ["a", "a", "a", "b", "c"]
 
-    encoder = NominalEncoder(elements, create_prob_table)
+    table = create_prob_table(elements)
+    encoder = NominalEncoder(table)
     result = encoder.encode(elements)
     print(result)
