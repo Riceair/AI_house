@@ -3,6 +3,7 @@ import os
 
 # 提交樣板路徑
 sub_template_path = "data\\public_submission_template.csv"
+price_col = "predicted_price"
 # 訓練資料路徑
 train_path = "data\\training_data.csv"
 # 公開測試路徑
