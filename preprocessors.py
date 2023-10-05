@@ -34,8 +34,8 @@ class Preprocessor:
 
         # ground truth normalizer
         self.y_true = df[truth_name].to_numpy()
-        self.normalizer_true = Normalizer(self.y_true, self.num_min, self.num_max)
-        self.y_true = self.normalizer_true.normalize(self.y_true)
+        self.normalizer_y = Normalizer(self.y_true, self.num_min, self.num_max)
+        self.y_true = self.normalizer_y.normalize(self.y_true)
 
         # symbolic columns encoder
         self.encoder_symb_dict = dict() # 儲存 symbolic 資料型態的 encoder
@@ -109,6 +109,9 @@ class Preprocessor:
         x = np.hstack([x_symbs, x_nums, x_coords])
         return x
 
+    def denormalizeY(self, y_pred):
+        return self.normalizer_y.denormalize(y_pred)
+
     def __convertTwd97toWgs84(self, h_col, v_col):
         lons, lats = [], []
         for h, v in zip(h_col, v_col):
@@ -131,3 +134,8 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(train_path, symbolic_type='onehot')
     x = preprocessor.preprocess(public_path)
     print(x.shape)
+
+    y = preprocessor.y_true
+    print(np.max(y), np.min(y))
+    y = preprocessor.denormalizeY(y)
+    print(np.max(y), np.min(y))
