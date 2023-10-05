@@ -25,13 +25,16 @@ class Preprocessor:
         self.symbolic_names = symbolic_names
         self.numerical_names = numerical_names
         self.coordinate_names = coordinate_names
-        self.__setSymoblicType(symbolic_type)
+        self.num_min = num_min
+        self.num_max = num_max
+        self.symbolic_type = symbolic_type
+        self.__setSymoblicType(self.symbolic_type)
         df = pd.read_csv(csv_path)
         df = pd.DataFrame(df)
 
         # ground truth normalizer
         self.y_true = df[truth_name].to_numpy()
-        self.normalizer_true = Normalizer(self.y_true, num_min, num_max)
+        self.normalizer_true = Normalizer(self.y_true, self.num_min, self.num_max)
         self.y_true = self.normalizer_true.normalize(self.y_true)
 
         # symbolic columns encoder
@@ -47,7 +50,7 @@ class Preprocessor:
         self.normalizer_num_dict = dict()
         for name in self.numerical_names:
             num_col = df[name].to_numpy()
-            normalizer = Normalizer(num_col, num_min, num_max)
+            normalizer = Normalizer(num_col, self.num_min, self.num_max)
             self.normalizer_num_dict[name] = normalizer # 紀錄 numerical normalizer
 
         # coordinate columns transformer (twd97 -> lon, lat)
@@ -56,8 +59,8 @@ class Preprocessor:
         h_col = df[coordinate_names[0]].to_numpy()
         v_col = df[coordinate_names[1]].to_numpy()
         lons, lats = self.__convertTwd97toWgs84(h_col, v_col)
-        self.normalizer_coord_dict[coordinate_names[0]] = Normalizer(lons, num_min, num_max)
-        self.normalizer_coord_dict[coordinate_names[1]] = Normalizer(lats, num_min, num_max)
+        self.normalizer_coord_dict[coordinate_names[0]] = Normalizer(lons, self.num_min, self.num_max)
+        self.normalizer_coord_dict[coordinate_names[1]] = Normalizer(lats, self.num_min, self.num_max)
 
     def preprocess(self, csv_path):
         df = pd.read_csv(csv_path)
@@ -71,8 +74,40 @@ class Preprocessor:
             col = col.to_numpy()
             col = np.array(encoder.encode(col)) # encode the data
             x_symbs.append(col)
-        x_symbs = np.hstack(x_symbs)
-        print(x_symbs.shape)
+        # 串接 columns
+        if self.symbolic_type == 'onehot':
+            x_symbs = np.hstack(x_symbs)
+        else:
+            x_symbs = np.stack(x_symbs, axis=1)
+        
+        # normalize numerical columns
+        x_nums = []
+        for name in self.numerical_names:
+            normalizer = self.normalizer_num_dict[name]
+            col = df[name].to_numpy()
+            col = normalizer.normalize(col)
+            col = np.where(col<self.num_min, self.num_min, col) # 控制最大、最小值
+            col = np.where(col>self.num_max, self.num_max, col)
+            x_nums.append(col)
+        x_nums = np.stack(x_nums, axis=1)
+
+        # normalize coordinate
+        x_coords = []
+        h_col = df[coordinate_names[0]].to_numpy()
+        v_col = df[coordinate_names[1]].to_numpy()
+        lons, lats = self.__convertTwd97toWgs84(h_col, v_col)
+        normalizer_lon = self.normalizer_coord_dict[coordinate_names[0]] # get normalizer
+        normalizer_lat = self.normalizer_coord_dict[coordinate_names[1]]
+        lons = normalizer_lon.normalize(lons)
+        lats = normalizer_lat.normalize(lats)
+        lons = np.where(lons<self.num_min, self.num_min, lons) # 控制最大、最小值
+        lons = np.where(lons>self.num_max, self.num_max, lons)
+        lats = np.where(lats<self.num_min, self.num_min, lats)
+        lats = np.where(lats>self.num_max, self.num_max, lats)
+        x_coords = np.stack([lons, lats], axis=1)
+
+        x = np.hstack([x_symbs, x_nums, x_coords])
+        return x
 
     def __convertTwd97toWgs84(self, h_col, v_col):
         lons, lats = [], []
@@ -93,5 +128,6 @@ class Preprocessor:
             raise NameError("symbolic_type must be 'onehot', 'order', or 'prob'")
 
 if __name__ == "__main__":
-    preprocessor = Preprocessor(train_path)
-    preprocessor.preprocess(public_path)
+    preprocessor = Preprocessor(train_path, symbolic_type='onehot')
+    x = preprocessor.preprocess(public_path)
+    print(x.shape)
