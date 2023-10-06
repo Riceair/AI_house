@@ -16,4 +16,4 @@ class BasicDataset(torch.utils.data.Dataset):
         return datum, target
 
     def __len__(self):
-        return len(self.datum)
+        return len(self.data)

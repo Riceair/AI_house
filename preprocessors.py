@@ -12,7 +12,8 @@ class Preprocessor:
                  coordinate_names = coordinate_names,
                  truth_name = truth_name,
                  symbolic_type = "onehot",
-                 num_min = -1, num_max = 1,):
+                 num_min = 0, num_max = 1,
+                 y_min = 0, y_max = 1,):
         '''
         symbolic_type: symbolic type can be 'onehot', 'order', 'prob'\n
         data_path: data csv path \n
@@ -27,6 +28,8 @@ class Preprocessor:
         self.coordinate_names = coordinate_names
         self.num_min = num_min
         self.num_max = num_max
+        self.y_min = y_min
+        self.y_max = y_max
         self.symbolic_type = symbolic_type
         self.__setSymoblicType(self.symbolic_type)
         df = pd.read_csv(csv_path)
@@ -34,7 +37,7 @@ class Preprocessor:
 
         # ground truth normalizer
         self.y_true = df[truth_name].to_numpy()
-        self.normalizer_y = Normalizer(self.y_true, self.num_min, self.num_max)
+        self.normalizer_y = Normalizer(self.y_true, self.y_min, self.y_max)
         self.y_true = self.normalizer_y.normalize(self.y_true)
 
         # symbolic columns encoder
