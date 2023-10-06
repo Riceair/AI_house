@@ -6,9 +6,10 @@ import numpy as np
 import joblib
 
 # preprocessing
-save_path = "save_models/rf.pkl"
-result_path = "result/rf.csv"
-preprocessor = Preprocessor()
+symbolic_type = "onehot"
+save_path = "save_models/rf_"+symbolic_type+".pkl"
+result_path = "result/rf_"+symbolic_type+".csv"
+preprocessor = Preprocessor(symbolic_type=symbolic_type, num_min=0, num_max=1)
 X_train = preprocessor.preprocess(train_path)
 y_train = preprocessor.y_true
 y_train = np.ravel(y_train)
