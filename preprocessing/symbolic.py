@@ -6,15 +6,15 @@ class SymbolicEncoder:
         results = [self.table[element] for element in elements]
         return results
     
-def create_onehot_table(elements) -> dict:
+def create_onehot_table(elements, target_min=0, target_max=1) -> dict:
     # get element set
     element_set = list(set(elements))
     element_set = sorted(element_set)
     # create table
     table = dict()
     for i, element in enumerate(element_set):
-        value = [0 for _ in range(len(element_set))]
-        value[i] = 1
+        value = [target_min for _ in range(len(element_set))]
+        value[i] = target_max
         table[element] = value
     return table
 

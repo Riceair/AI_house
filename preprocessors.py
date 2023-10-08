@@ -33,7 +33,6 @@ class Preprocessor:
         self.y_min = y_min
         self.y_max = y_max
         self.symbolic_type = symbolic_type
-        self.__setSymoblicType(self.symbolic_type)
         df = pd.read_csv(csv_path)
         df = pd.DataFrame(df)
 
@@ -47,7 +46,14 @@ class Preprocessor:
         for name in self.symbolic_names:
             symb_col = df[name].fillna("None") # 讀column，並把nan改成'None'
             symb_col = symb_col.to_numpy()
-            table = self.create_table(symb_col)
+            if self.symbolic_type == "onehot":
+                table = create_onehot_table(symb_col, self.num_min, self.num_max)
+            elif self.symbolic_type == "order":
+                table = create_order_table(symb_col)
+            elif self.symbolic_type == "prob":
+                table = create_prob_table(symb_col)
+            else:
+                raise NameError("symbolic_type must be 'onehot', 'order', or 'prob'")
             encoder = SymbolicEncoder(table)
             self.encoder_symb_dict[name] = encoder # 紀錄 symbolic encoder
         
@@ -195,17 +201,7 @@ class Preprocessor:
             ex_coords_list.append(np.array(coords))
 
         return ex_coords_list
-
-    def __setSymoblicType(self, symoblic_type):
-        if symoblic_type == "onehot":
-            self.create_table = create_onehot_table
-        elif symoblic_type == "order":
-            self.create_table = create_order_table
-        elif symoblic_type == "prob":
-            self.create_table = create_prob_table
-        else:
-            raise NameError("symbolic_type must be 'onehot', 'order', or 'prob'")
-
+       
 if __name__ == "__main__":
     preprocessor = Preprocessor(train_path, symbolic_type='onehot')
     x = preprocessor.preprocess(public_path, is_external=True)
