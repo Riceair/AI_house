@@ -50,10 +50,12 @@ class Preprocessor:
                 table = create_onehot_table(symb_col, self.num_min, self.num_max)
             elif self.symbolic_type == "order":
                 table = create_order_table(symb_col)
+            elif self.symbolic_type == "y_order":
+                table = create_y_order_table(symb_col, self.y_true, self.num_min, self.num_max)
             elif self.symbolic_type == "prob":
                 table = create_prob_table(symb_col)
             else:
-                raise NameError("symbolic_type must be 'onehot', 'order', or 'prob'")
+                raise NameError("symbolic_type must be 'onehot', 'order', 'y_order', or 'prob'")
             encoder = SymbolicEncoder(table)
             self.encoder_symb_dict[name] = encoder # 紀錄 symbolic encoder
         
@@ -98,7 +100,7 @@ class Preprocessor:
             col = np.array(encoder.encode(col)) # encode the data
             x_symbs.append(col)
         # 串接 columns
-        if self.symbolic_type == 'onehot':
+        if self.symbolic_type == 'onehot' or self.symbolic_type == 'y_order':
             x_symbs = np.hstack(x_symbs)
         else:
             x_symbs = np.stack(x_symbs, axis=1)
@@ -203,7 +205,7 @@ class Preprocessor:
         return ex_coords_list
        
 if __name__ == "__main__":
-    preprocessor = Preprocessor(train_path, symbolic_type='onehot')
+    preprocessor = Preprocessor(train_path, symbolic_type='y_order')
     x = preprocessor.preprocess(public_path, is_external=True)
     print(x.shape)
 
